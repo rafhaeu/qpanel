@@ -4,6 +4,28 @@ All notable changes to QPanel will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 
+## 1.0.0  (2020-03-28)
+
+### Added
+- Docker support File
+- Add script command to run reset stats 
+- Sample configuration file for supervisord and reset stats
+- Guide for FreePBX 15 as Service
+- Support to filter and login by external service
+- Sample e integration by domain filter for FusionPBX
+
+### Changed
+- Remove Python2.7 Support
+- Use realname_queue for reset_stats_queue
+- Split requirements for FreeSWITCH
+
+### Fixed
+- Support Redis version >= 3.0 for Reset stats jobs
+- Remove member from a renamed Queue
+- Format time for reset queue stats
+- Fix reset stats for Queues
+
+
 ## 0.16.1  (2019-10-13)
 
 ### Fixed

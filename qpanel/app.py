@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #
-# Copyright (C) 2015-2019 Rodrigo Ramírez Norambuena <a@rodrigoramirez.com>
+# Copyright (C) 2015-2020 Rodrigo Ramírez Norambuena <a@rodrigoramirez.com>
 #
 
 from flask import Flask, jsonify, redirect, request, session, url_for
@@ -22,12 +22,8 @@ from qpanel.backend import Backend
 if QPanelConfig().has_queuelog_config():
     from qpanel.model import queuelog_data_queue
 
-import sys
-PY2 = sys.version_info[0] == 2
+import requests
 
-if PY2: # Python 3 has not setdefaultencoding and UTF-8 is default
-    reload(sys)
-    sys.setdefaultencoding('utf-8')
 
 class User(flask_login.UserMixin):
     pass
@@ -36,10 +32,41 @@ class User(flask_login.UserMixin):
 cfg = QPanelConfig()
 backend = Backend()
 
+EXTERNAL_LOGIN = cfg.get_value_set_default('general', 'external_login', False) != False
+
+
+def get_filter_queue():
+    key = 'filter_queues'
+    if key in session:
+        return session[key]
+
+
+def filter_queue_external(data):
+    # Rename and filter queues for User
+    # by external Login
+    filter_queues = get_filter_queue()
+    tmp = {}
+
+    # prevent raise error if None from get_filter_queue
+    if filter_queues is None:
+        return tmp
+
+    for id_queue in data:
+        s = filter(lambda queue: 'id' in queue.keys() and queue['id'] == id_queue, filter_queues)
+        if not s:
+            continue
+        tmp[s[0]['name']] = data[id_queue]
+
+    return tmp
+
 
 def get_data_queues(queue=None):
     username = flask_login.current_user.get_id()
     data = backend.get_data_queues(user=username)
+
+    if EXTERNAL_LOGIN:
+        data = filter_queue_external(data)
+
     if queue is not None:
         try:
             data = data[queue]
@@ -99,6 +126,14 @@ def unauthorized_handler():
 @login_manager.user_loader
 def user_loader(username):
     user_config = get_user_config_by_name(username)
+
+    if EXTERNAL_LOGIN:
+        if get_filter_queue() is None:
+            return
+        user = User()
+        user.id = username
+        return user
+
     if user_config is None:
         return
     return set_data_user(user_config)
@@ -141,6 +176,37 @@ def login():
         flask_login.login_user(user)
         return redirect(url_for('home'))
     return redirect(url_for('login'))
+
+
+@app.route('/login_external', methods=['GET', 'POST'])
+def login_external():
+
+    """ Login with external endpoint. The endpoint should return
+        a Array JSON
+        [{u'name': u'Support', u'id': u'b15be236-1a32-4b11-ad5c-98924d0df8a8'}]
+    """
+
+    url = cfg.get('general', 'external_login')
+
+    if request.method == 'GET':
+        params = dict(request.args)
+        req = requests.get(url, params)
+    else:
+        req = requests.post(url, request.form)
+
+    try:
+        queues = req.json()
+        app.logger.debug("Queues from External Login %s" % queues)
+        if len(queues) > 0:
+            user = User()
+            user.id = 'external_login'
+            session['filter_queues'] = queues
+            flask_login.login_user(user)
+            return redirect(url_for('home'))
+    except:
+        pass
+
+    return redirect(url_for('logout'))
 
 
 @app.before_first_request
@@ -366,7 +432,7 @@ def hangup_call():
 
 @app.route('/stats/<from_date>/<to_date>/<name>.json')
 def stats_json(name, from_date, to_date):
-    real_name = uqpanel.realname_queue_rename(name)
+    real_name = cfg.realname_queue(name)
     queue_values = queuelog_data_queue(from_date, to_date, None, real_name)
     data = get_data_queues(name)
     return jsonify(name=name, data=data, values=queue_values)
@@ -390,7 +456,7 @@ def stats(name, from_date, to_date):
 @app.route('/remove_from_queue', methods=['POST'])
 @flask_login.login_required
 def remove_from_queue():
-    queue = request.form['queue']
+    queue = cfg.realname_queue(request.form['queue'])
     agent = request.form['agent']
     r = backend.remove_from_queue(agent, queue)
     return jsonify(result=r)
@@ -416,16 +482,6 @@ def main():
         else:
             print("Error: There not connection to Redis")
             print("       Reset stats will not work\n")
-
-    if PY2:
-        # This change is a fix for issue with Python 2.7
-        # The error is IOError: [Errno 32] Broken pipe
-        # All this shit happend if the connection is closed early
-        # by remove client (browser)
-        # Long story https://github.com/pallets/werkzeug/issues/954
-        from gevent.wsgi import WSGIServer
-        http_server = WSGIServer((cfg.host_bind, cfg.port_bind), app)
-        http_server.serve_forever()
 
     if cfg.base_url == '/':
         app.run(host=cfg.host_bind, port=cfg.port_bind, use_reloader=reloader,

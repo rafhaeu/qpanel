@@ -3,7 +3,7 @@
 #
 # Class Qpanel for Asterisk
 #
-# Copyright (C) 2015-2019 Rodrigo Ramírez Norambuena <a@rodrigoramirez.com>
+# Copyright (C) 2015-2020 Rodrigo Ramírez Norambuena <a@rodrigoramirez.com>
 #
 
 from __future__ import absolute_import
@@ -84,7 +84,7 @@ class AsteriskAMI:
             return self.connection.Originate(where_listen,
                                              application='ChanSpy',
                                              data=channel + options,
-                                             async='yes')
+                                             async_param='yes')
         except ActionFailed as msg:
             return {'Response': 'failed', 'Message': str(msg)}
         except PermissionDenied as msg:

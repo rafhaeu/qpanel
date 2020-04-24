@@ -17,7 +17,7 @@ Where you add software
 
 ```
     mkdir /usr/local/apps
-    cd /usr/local/apps`
+    cd /usr/local/apps
     git clone https://github.com/roramirez/qpanel.git
 ```
 
@@ -43,11 +43,11 @@ Use a Freeswitch as Backend
  sed -ie 's/;freeswitch = True/freeswitch = True/g' config.ini
 
  echo '
- [freeswitch]
- host = 127.0.0.1
- port = 8021
- password = ClueCon
- ' >> config.ini
+[freeswitch]
+host = 127.0.0.1
+port = 8021
+password = ClueCon
+' >> config.ini
 
 ```
 
@@ -75,7 +75,7 @@ Add uwsgi configuration
 ' > /etc/uwsgi.d/uwsgi-qpanel.ini
 ```
 
-Add this next line inside a HTTPs configuration in Nginx (/etc/nginx/sites-enabled/fusionpbx.conf)
+Add this next line inside a HTTPs configuration in Nginx (/etc/nginx/sites-enabled/fusionpbx)
 
 
 ```

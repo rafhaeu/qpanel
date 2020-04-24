@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #
-# Copyright (C) 2015-2019 Rodrigo Ramírez Norambuena <a@rodrigoramirez.com>
+# Copyright (C) 2015-2020 Rodrigo Ramírez Norambuena <a@rodrigoramirez.com>
 #
 from __future__ import absolute_import
 import six.moves.configparser
@@ -181,3 +181,17 @@ class QPanelConfig:
         if theme not in available_themes:
             return 'qpanel'
         return theme
+
+    def realname_queue(self, queuename):
+        """
+        Return the realname for a queue if this is using a rename
+        from config.ini [rename] section
+
+        param str queuename: The name of queue (renamed)
+        """
+        renames = self.get_items('rename')
+        if renames is not None:
+            for val, idx in renames:
+                if idx == queuename:
+                    return val
+        return queuename

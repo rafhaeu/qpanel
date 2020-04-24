@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #
-# Copyright (C) 2015-2019 Rodrigo Ramírez Norambuena <a@rodrigoramirez.com>
+# Copyright (C) 2015-2020 Rodrigo Ramírez Norambuena <a@rodrigoramirez.com>
 #
 import time
 
@@ -18,5 +18,5 @@ def convert_time_when_param(value, splitter=','):
         hour = time.strptime(hour, "%H:%M:%S")
     except ValueError:
         hour = time.strptime('00:00:00', "%H:%M:%S")
-    hour = time.strftime('%M:%M:%S', hour)
+    hour = time.strftime('%H:%M:%S', hour)
     return {'when': var[0], 'hour': hour}
